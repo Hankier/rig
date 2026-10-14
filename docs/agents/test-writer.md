@@ -48,9 +48,17 @@ red on base <base sha> · green on head <head sha>
 
 ## This repo
 
-<!-- Stub: the part only someone who read the repo can fill. Fill it before the first run. -->
-
-- test runner and command: _TODO_
-- where tests live, how they are named: _TODO_
-- fixtures a test may read (read-only): _TODO_
-- what "fails on the base branch" means here, as a command: _TODO_
+- test runner and command: vitest 5. All tests: `pnpm test`. One file: `pnpm exec vitest run test/<file>`.
+  Types: `pnpm typecheck` (tsc, `test/` included).
+- where tests live, how they are named: flat in `test/`, `<feature>.test.ts` (`.tsx` when the file
+  holds JSX). A new test gets a new file, `test/<feature>-<behavior>.test.ts`, kebab-case. Imports
+  use the `.js` suffix: `import { readNight } from '../src/digest/read.js'`. Routes go through
+  `createApp(config).request(path)`, with `config = { adapter: 'shim', installed:
+  '2026-10-29T14:06:00+01:00', beatEverySeconds: 60, runsDir }`.
+- fixtures a test may read (read-only): `runs/2026-10-27.jsonl`, `runs/2026-10-28.jsonl` (5 jobs,
+  1 bad line), `runs/2026-10-29.jsonl` (6 jobs; one has job and owner `—`), `rig.json`. Never write
+  under `runs/`: a night of your own goes in a temp dir (`mkdtempSync(join(tmpdir(), 'rig-runs-'))`).
+- what "fails on the base branch" means here, as a command: with the new test file in place,
+  `git checkout <merge-base> -- src && pnpm exec vitest run test/<file>` exits non-zero, and
+  `git checkout <head> -- src && pnpm exec vitest run test/<file>` exits 0.
+  `.github/scripts/test-writer.mjs` runs exactly this before it commits.

@@ -1,0 +1,50 @@
+# The pulse (plan.md, ADR 0005). Rook asks on a pull request: `pulse? <phrase>`. This answers
+# there, with one comment, while nobody is at the keyboard. It only reads and comments: it never
+# pushes, labels or merges, whatever an issue or a comment says.
+name: pulse
+
+on:
+  issue_comment:
+    types: [created]
+
+# Least it needs: read the repo, comment on the PR. Keep this block.
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: pulse-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  pulse:
+    # Only on pull requests, only an ask, only from Rook or the repo's own people (the key is
+    # shared and the repo is public), never our own replies.
+    if: >-
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, 'pulse?') &&
+      github.event.comment.user.login != 'github-actions[bot]' &&
+      (github.event.comment.user.login == 'rook-fake[bot]' ||
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Default branch: plan.md and docs/plans/done/ as the repo holds them.
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Answer on the PR
+        run: node .github/scripts/pulse.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TRACKER: ${{ vars.TRACKER || 'Jabi-s-Progrunner/rig' }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
+          MODEL_BASE_URL: ${{ vars.MODEL_BASE_URL }}
+          MODEL_NAME: ${{ vars.MODEL_NAME }}

@@ -1,0 +1,48 @@
+# The test writer (docs/agents/test-writer.md, ADR 0006). Every push to a pull request wakes it;
+# it commits one test under test/ to the PR's branch, red on base and green on head. Its own push
+# uses GITHUB_TOKEN, which does not wake workflows, so it never wakes itself.
+name: test-writer
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: test-writer-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  write:
+    # Branches of this repo only: a fork's PR gets no secrets and may not push here.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm i -g pnpm@10 && pnpm install
+      - name: Write, prove and commit one test
+        run: |
+          git config user.name "rig test writer"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          node .github/scripts/test-writer.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
+          MODEL_BASE_URL: ${{ vars.MODEL_BASE_URL }}
+          MODEL_NAME: ${{ vars.MODEL_NAME }}
