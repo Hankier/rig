@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { NO_OWNER, ownerOf } from './owner.js';
+import { ownerOf } from './owner.js';
 import type { DigestRow, Night, RunLine, RunStatus } from './types.js';
 
 const STATUSES: RunStatus[] = ['ok', 'retry', 'fail'];
@@ -34,9 +34,6 @@ export function readNight(runsDir: string, night: string): Night | null {
       badLines++;
       continue;
     }
-    // #12: a row that already carries the placeholder is one the digest wrote back, not a job.
-    if (line.owner === NO_OWNER) continue;
-
     const row = rows.get(line.job);
     if (!row) {
       rows.set(line.job, {
