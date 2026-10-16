@@ -25,7 +25,7 @@ jobs:
       github.event.issue.pull_request &&
       contains(github.event.comment.body, 'pulse?') &&
       github.event.comment.user.login != 'github-actions[bot]' &&
-      (github.event.comment.user.login == 'rook-fake[bot]' ||
+      (github.event.comment.user.login == 'progrunner-rook[bot]' ||
        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -42,7 +42,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          TRACKER: ${{ vars.TRACKER || 'Jabi-s-Progrunner/rig' }}
+          TRACKER: ${{ vars.TRACKER || 'MEGA-DOT-DEV/rig' }}
           PR_NUMBER: ${{ github.event.issue.number }}
           COMMENT_BODY: ${{ github.event.comment.body }}
           MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
