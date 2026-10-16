@@ -1,6 +1,6 @@
 # The test writer (docs/agents/test-writer.md, ADR 0006). Every push to a pull request wakes it;
 # it commits one test under test/ to the PR's branch, red on base and green on head. Its own push
-# uses GITHUB_TOKEN, which does not wake workflows, so it never wakes itself.
+# still creates a run (GitHub holds it for approval); the job skips it, so it never wakes itself.
 name: test-writer
 
 on:
@@ -18,8 +18,11 @@ concurrency:
 
 jobs:
   write:
-    # Branches of this repo only: a fork's PR gets no secrets and may not push here.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Branches of this repo only: a fork's PR gets no secrets and may not push here. Never a push
+    # of its own (sender stays github-actions[bot] on a re-run, so a re-run skips too).
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.sender.login != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
